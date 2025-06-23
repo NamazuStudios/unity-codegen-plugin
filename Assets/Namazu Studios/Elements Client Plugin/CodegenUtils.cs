@@ -152,7 +152,7 @@ namespace Elements.Codegen
                     Debug.LogError(e);
                 }
 
-                ZipFile.ExtractToDirectory(filePath, generatedCodePath);
+                ZipFile.ExtractToDirectory(filePath, generatedCodePath, true);
                 File.Delete(filePath);
 
                 ApplyFixes(generatedCodePath);
