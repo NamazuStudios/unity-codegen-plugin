@@ -1,1 +1,1 @@
-{"packageName":"Elements","packageVersion":"1.0.0","urlRoot":"http://localhost:8080","applicationName":"MyApplication","relativeDirectory":"Generated"}
+{"packageName":"Elements","packageVersion":"1.0.0","urlRoot":"http://localhost:8080","applicationName":"example-element","relativeDirectory":"Generated"}

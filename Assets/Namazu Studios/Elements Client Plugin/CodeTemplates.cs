@@ -99,6 +99,8 @@ namespace {namespace}.Client
             {
                 LoadSessionData();
             }
+
+            initialized = true;
         }
 
          /// <summary>
@@ -109,7 +111,7 @@ namespace {namespace}.Client
         {
             session = sessionCreation.Session;
             sessionToken = sessionCreation.SessionSecret;
-            Api.Configuration.ApiKey[""Elements-SessionSecret""] = sessionCreation.SessionSecret;
+            SetSessionHeader();
 
             if (shouldCacheSession)
             {
@@ -226,9 +228,14 @@ namespace {namespace}.Client
                 //We don't want to assign an expired token
                 if(IsSessionActive())
                 {
-                    Api.Configuration.ApiKey[""Elements-SessionSecret""] = sessionCreation.SessionSecret;
+                    SetSessionHeader();
                 }
             }
+        }
+
+        private static void SetSessionHeader()
+        {
+            Api.Configuration.ApiKey[""Elements-SessionSecret""] = session.Profile?.Id != null ? sessionToken + "" p"" + session.Profile.Id : sessionToken;
         }
 
         private static void DeleteSessionData()

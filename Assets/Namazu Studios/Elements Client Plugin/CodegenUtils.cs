@@ -28,7 +28,7 @@ namespace Elements.Codegen
         /// <summary>
         /// Attempts to generate the code in response to the button click
         /// </summary>
-        public void GenerateCode()
+        public void GenerateCode(string elementSpecUrl)
         {
             try
             {
@@ -38,9 +38,7 @@ namespace Elements.Codegen
 
                 CodegenPrecheck();
 
-                DoGenerateCode(Config.GetPath(), null);
-
-                //DoGenerateCode(config.GetPath(), config.applicationName);
+                DoGenerateCode(Config.GetPath(), elementSpecUrl);
 
                 AssetDatabase.Refresh();
             }
@@ -90,12 +88,14 @@ namespace Elements.Codegen
         /// <summary>
         /// Attempts to generate the code at the given url
         /// </summary>
-        public void DoGenerateCode(string generatedCodePath, string applicationNameOrId)
+        public void DoGenerateCode(string generatedCodePath, string applicationName)
         {
             try
             {
                 var url = Config.urlRoot + "/api/rest/codegen";
                 var filePath = Path.Combine(generatedCodePath, "ElementsCore.zip");
+
+                var elementSpecUrl = applicationName == null ? null : $"{Config.urlRoot}/app/rest/{Config.applicationName}/openapi.json";
 
                 try
                 {
@@ -103,20 +103,22 @@ namespace Elements.Codegen
                     {
                         var request = (HttpWebRequest)WebRequest.Create(url);
 
-                        var requestData = JsonConvert.SerializeObject(new Dictionary<string, string>
+                        var requestBody = new Dictionary<string, string>
                         {
-                            { "applicationNameOrId", applicationNameOrId },
+                            { "elementSpecUrl", elementSpecUrl },
                             { "language", "csharp" },
                             { "packageName", Config.packageName },
                             { "options", "library=unityWebRequest," +
                                          "optionalEmitDefaultValues=false," +
                                          "nullableReferenceTypes=false," +
-                                         "useDateTimeOffset=true," +
+                                         "useDateTimeOffset=false," +
                                          "targetFramework=net48," +
                                          "useDateTimeForDate=true" +
                                          "optionalAssemblyInfo=false" +
                                          "optionalProjectFile=false" }
-                        });
+                        };
+
+                        var requestData = JsonConvert.SerializeObject(requestBody);
 
                         var requestBytes = Encoding.ASCII.GetBytes(requestData);
 
@@ -283,40 +285,81 @@ namespace Elements.Codegen
         /// </summary>
         public void ApplyFixes(string path)
         {
+            RemoveAssemblyDef(path);
+            RemoveTestDir(path);
+            FixApiClient(path);
+
+            CodeTemplates codeTemplates = new CodeTemplates();
+
+            AddRequestHooks(codeTemplates);
+            AddElementsClient(codeTemplates);
+        }
+
+        private void RemoveAssemblyDef(string path)
+        {
             //Remove unwanted assembly def files (only used for test files)
             var asmdefFiles = Directory.GetFiles(path, "*asmdef*", SearchOption.AllDirectories);
             asmdefFiles.ToList().ForEach(f =>
             {
                 File.Delete(f);
             });
+        }
 
+        private void RemoveTestDir(string path)
+        {
             //Remove generated test directory
             Directory.GetDirectories(path, Config.packageName + ".Test", SearchOption.AllDirectories)
                 .ToList()
                 .ForEach(f =>
-            {
-                Directory.Delete(f, true);
-            });
+                {
+                    Directory.Delete(f, true);
+                });
+        }
 
+        private void FixApiClient(string path)
+        {
             //Fix ApiClient
             string apiClientPath = Directory.GetFiles(path, "ApiClient.cs", SearchOption.AllDirectories).FirstOrDefault();
-            string fileText = File.ReadAllText(apiClientPath);
+            string[] fileText = File.ReadAllLines(apiClientPath);
 
-            if (!fileText.Contains("configuration.Timeout.Milliseconds"))
+            for (int i = 0; i < fileText.Length; ++i)
             {
-                fileText = fileText.Replace("configuration.Timeout", "configuration.Timeout.Milliseconds");
+                string line = fileText[i];
+
+                if (line.Contains("configuration.Timeout") && !line.Contains("configuration.Timeout.Milliseconds"))
+                {
+                    fileText[i] = line.Replace("configuration.Timeout", "configuration.Timeout.Milliseconds");
+                }
+                else if (line.Contains("ApiException"))
+                {
+                    /**
+                     * Removes the following case to prevent exceptions being thrown before the ExceptionFactory is called:
+                     else
+                    {
+                        throw new ApiException((int)request.responseCode, request.error, text);
+                    }
+                    */
+                    fileText[i - 2] = "";
+                    fileText[i - 1] = "";
+                    fileText[i] = "";
+                    fileText[i + 1] = "";
+                }
             }
 
-            File.WriteAllText(apiClientPath, fileText);
+            File.WriteAllLines(apiClientPath, fileText);
+        }
 
-            CodeTemplates codeTemplates = new CodeTemplates();
-
+        private void AddRequestHooks(CodeTemplates codeTemplates)
+        {
             //Add ApiClient request hooks            
-            fileText = codeTemplates.apiClientHookTemplate.Replace("{namespace}", Config.packageName);
+            var fileText = codeTemplates.apiClientHookTemplate.Replace("{namespace}", Config.packageName);
             File.WriteAllText(Path.Combine(Application.dataPath, Config.relativeDirectory, "src", Config.packageName, "ApiClient.partial.cs"), fileText);
+        }
 
+        private void AddElementsClient(CodeTemplates codeTemplates)
+        {
             //Add ElementsClient
-            fileText = codeTemplates.elementsClientTemplate.Replace("{namespace}", Config.packageName);
+            var fileText = codeTemplates.elementsClientTemplate.Replace("{namespace}", Config.packageName);
             File.WriteAllText(Path.Combine(Application.dataPath, Config.relativeDirectory, "ElementsClient.cs"), fileText);
         }
     }

@@ -66,16 +66,21 @@ namespace Elements.Codegen
 
             DrawUILine(Color.gray, 1);
 
-            if (GUILayout.Button(isLoading ? "Generating code..." : "Generate Code", buttonStyle))
+            if (GUILayout.Button(isLoading ? "Generating code..." : "Generate Core Elements Code", buttonStyle))
             {
                 if (!isLoading)
                 {
                     isLoading = true;
 
-                    codegen.GenerateCode();
+                    codegen.GenerateCode(null);
 
                     isLoading = false;
                 }
+            }
+
+            if (!isLoading && GUILayout.Button("Generate Custom Element Code", buttonStyle))
+            {
+                codegen.GenerateCode(codegen.Config.applicationName);
             }
 
             EditorGUILayout.EndVertical();
