@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+
+using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
@@ -113,9 +115,10 @@ namespace Elements.Codegen
                                          "nullableReferenceTypes=false," +
                                          "useDateTimeOffset=false," +
                                          "targetFramework=net48," +
-                                         "useDateTimeForDate=true" +
-                                         "optionalAssemblyInfo=false" +
-                                         "optionalProjectFile=false" }
+                                         "useDateTimeForDate=true," +
+                                         "optionalAssemblyInfo=false," +
+                                         "optionalProjectFile=false," +
+                                         "useStringEnum=true" }
                         };
 
                         var requestData = JsonConvert.SerializeObject(requestBody);
@@ -158,6 +161,7 @@ namespace Elements.Codegen
                 File.Delete(filePath);
 
                 ApplyFixes(generatedCodePath);
+                SetGlobalDefines();
             }
             catch (Exception e)
             {
@@ -362,5 +366,30 @@ namespace Elements.Codegen
             var fileText = codeTemplates.elementsClientTemplate.Replace("{namespace}", Config.packageName);
             File.WriteAllText(Path.Combine(Application.dataPath, Config.relativeDirectory, "ElementsClient.cs"), fileText);
         }
+
+        private void SetGlobalDefines()
+        {
+            var path = Path.Combine(Application.dataPath, "csc.rsp");
+            var customDefines = "-define:ELEMENTS_GENERATED";
+
+            if (File.Exists(path))
+            {
+                var lines = File.ReadAllLines(path);
+
+                if (!lines.Any(line => line.Contains(customDefines)))
+                {
+                    var linesList = lines.ToList();
+                    linesList.Add(customDefines);
+
+                    File.WriteAllLines(path, linesList.ToArray());
+                }
+            }
+            else
+            {
+                File.WriteAllText(path, customDefines);
+            }
+        }
     }
 }
+
+#endif

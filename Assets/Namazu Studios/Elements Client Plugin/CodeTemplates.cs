@@ -1,4 +1,4 @@
-﻿
+﻿#if UNITY_EDITOR
 
 namespace Elements.Codegen
 {
@@ -87,6 +87,8 @@ namespace {namespace}.Client
             api = new Api.DefaultApi(rootUrl);
             api.ApiClient.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
             api.ApiClient.SerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+            api.ApiClient.SerializerSettings.Converters = new System.Collections.Generic.List<JsonConverter> { new Newtonsoft.Json.Converters.StringEnumConverter() };
+
             //Sometimes the JSON deserializer won't apply the above rules to null values
             api.ApiClient.SerializerSettings.Error = (sender, errorArgs) =>
             { 
@@ -258,4 +260,4 @@ namespace {namespace}.Client
 
 }
 
-
+#endif
