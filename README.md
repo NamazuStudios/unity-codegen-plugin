@@ -6,7 +6,7 @@
 - Unity 2018+
 - .Net 4.x enabled in project
 - Elements running at an accessible URL
- - To generate custom application code: Must also have an application created within Elements with the code already uploaded.
+ - To generate custom application code: Must also have an application created within Elements with the code already uploaded. [See the docs here for more info](https://namazustudios.com/docs/custom-code/preparing-for-code-generation/) on how to prepare your Element code for client code generation.
 
 ### Summary 
 
@@ -46,4 +46,4 @@ See ElementsCodegen/Tests/ElementsTest.cs for an example on how to log in and ge
 
 Enjoy!
 
-See [https://manual.getelements.dev/](https://manual.getelements.dev/) for more information.
+See [https://namazustudios.com/docs/](https://namazustudios.com/docs/) for more information.
