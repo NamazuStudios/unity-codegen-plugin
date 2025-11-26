@@ -118,6 +118,8 @@ namespace Elements.Codegen
                                          "useDateTimeForDate=true," +
                                          "optionalAssemblyInfo=false," +
                                          "optionalProjectFile=false," +
+                                         "enumPropertyNaming=original," +
+                                         "removeEnumValuePrefix=false," +
                                          "useStringEnum=true" }
                         };
 

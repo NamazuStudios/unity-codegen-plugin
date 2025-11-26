@@ -6,7 +6,7 @@ namespace Elements.Codegen
 {
     public class ElementsCodegenGui : EditorWindow
     {
-        private static CodegenUtils codegen = new CodegenUtils();
+        private static CodegenUtils codegen = new();
 
         private GUIStyle wordWrapStyle;
         private GUIStyle buttonStyle;
@@ -62,7 +62,7 @@ namespace Elements.Codegen
 
             DrawUILine(Color.gray, 1);
 
-            EditorGUILayout.LabelField("The name of the application as it is set in the admin panel.", wordWrapStyle);
+            EditorGUILayout.LabelField("The name of the Element as it is set in its properties. See the Serve Prefix property of the Element info in the admin panel.", wordWrapStyle);
             codegen.Config.applicationName = EditorGUILayout.TextField("Application Name", codegen.Config.applicationName);
 
             DrawUILine(Color.gray, 1);
@@ -105,7 +105,7 @@ namespace Elements.Codegen
 
 
         /// <summary>
-        /// If the haven't been created already, creates the GUI styles to be used in this window.
+        /// If they haven't been created already, creates the GUI styles to be used in this window.
         /// </summary>
         private void CheckGuiStyles()
         {
