@@ -51,7 +51,7 @@ namespace {namespace}.Client
         public static ElementsClient Default { get; private set; }
 
         // Shortcut for core Elements API at /api/rest
-        public Api.DefaultApi Api => GetApi<Api.DefaultApi>();
+        public Api.ElementsCoreApi Api => GetApi<Api.ElementsCoreApi>();
 
         private readonly string instanceRoot;
         private readonly bool shouldCacheSession;
@@ -75,7 +75,7 @@ namespace {namespace}.Client
 
             // Construct core API at /api/rest and register it
             var coreBaseUrl = CoreBaseUrl;
-            var coreApi = new Api.DefaultApi(coreBaseUrl);
+            var coreApi = new Api.ElementsCoreApi(coreBaseUrl);
             coreApi.ExceptionFactory = null;
             RegisterApi(coreApi);
 
