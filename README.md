@@ -16,6 +16,8 @@ In addition, there are some convenience classes generated so that you can hit th
 
 Go to **Window -> Elements -> Elements Codegen** to get started.
 
+You'll need to enter the credentials of an admin/SUPERUSER. If you haven't changed the defaults yet, you should be able to just use root/example as the username/password.
+
 > [!Important]
 > You must have Elements running at the target root URL. If running locally, then by default this will be `http://localhost:8080`
 
