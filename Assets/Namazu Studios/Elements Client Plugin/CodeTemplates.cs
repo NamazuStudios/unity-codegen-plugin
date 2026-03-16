@@ -153,7 +153,21 @@ namespace {namespace}.Client
             return api;
         }
 
+        /// <summary>
+        /// If you use code stripping with IL2CPP, it is possible that a constructor can be removed if it isn't
+        /// explicitly called. This circumvents that issue by providing a func that is used to call new on the
+        /// concrete type. For example: client.CreateAppApi<MyGameApi>(""my-game"", url => new MyGameApi(url));
+        /// </summary>
+        public TApi CreateAppApi<TApi>(string appServePrefix, Func<string, TApi> factory)
+            where TApi : class, IApiAccessor
+        {
+            var api = factory(AppBaseUrl(appServePrefix));
+            api.ExceptionFactory = null;
+            RegisterApi(api);
+            return api;
+        }
         
+
 #endregion
 
 #region  Session / profile handling
