@@ -30,7 +30,7 @@ namespace Elements.Codegen
         /// <summary>
         /// Attempts to generate the code in response to the button click
         /// </summary>
-        public void GenerateCode(string elementSpecUrl)
+        public void GenerateCode(string applicationName)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace Elements.Codegen
 
                 CodegenPrecheck();
 
-                DoGenerateCode(Config.GetPath(), elementSpecUrl);
+                DoGenerateCode(Config.GetPath(), applicationName);
 
                 AssetDatabase.Refresh();
             }
@@ -61,7 +61,7 @@ namespace Elements.Codegen
 
             var url = Config.urlRoot + "/api/rest/session";
             var request = (HttpWebRequest)WebRequest.Create(url);
-            var requestData = "{\"userId\":\"" + UserId + "\",\"password\":\"" + Password + "\"}";
+            var requestData = JsonConvert.SerializeObject(new { userId = UserId, password = Password });
             var requestBytes = Encoding.ASCII.GetBytes(requestData);
 
             request.Method = WebRequestMethods.Http.Post;
@@ -97,62 +97,60 @@ namespace Elements.Codegen
                 var url = Config.urlRoot + "/api/rest/codegen";
                 var filePath = Path.Combine(generatedCodePath, "ElementsCore.zip");
 
-                var elementSpecUrl = applicationName == null ? null : $"{Config.urlRoot}/app/rest/{Config.applicationName}/openapi.json";
+                var elementSpecUrl = applicationName == null ? null : $"{Config.urlRoot}/app/rest/{applicationName}/openapi.json";
 
                 try
                 {
-                    using (var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write))
+                    using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write);
+                    var request = (HttpWebRequest)WebRequest.Create(url);
+
+                    var requestBody = new Dictionary<string, string>
                     {
-                        var request = (HttpWebRequest)WebRequest.Create(url);
+                        { "elementSpecUrl", elementSpecUrl },
+                        { "language", "csharp" },
+                        { "packageName", Config.packageName },
+                        { "options", "library=unityWebRequest," +
+                                     "optionalEmitDefaultValues=false," +
+                                     "nullableReferenceTypes=false," +
+                                     "useDateTimeOffset=false," +
+                                     "targetFramework=net48," +
+                                     "useDateTimeForDate=true," +
+                                     "optionalAssemblyInfo=false," +
+                                     "optionalProjectFile=false," +
+                                     "enumPropertyNaming=original," +
+                                     "removeEnumValuePrefix=false," +
+                                     "useStringEnum=true" }
+                    };
 
-                        var requestBody = new Dictionary<string, string>
-                        {
-                            { "elementSpecUrl", elementSpecUrl },
-                            { "language", "csharp" },
-                            { "packageName", Config.packageName },
-                            { "options", "library=unityWebRequest," +
-                                         "optionalEmitDefaultValues=false," +
-                                         "nullableReferenceTypes=false," +
-                                         "useDateTimeOffset=false," +
-                                         "targetFramework=net48," +
-                                         "useDateTimeForDate=true," +
-                                         "optionalAssemblyInfo=false," +
-                                         "optionalProjectFile=false," +
-                                         "enumPropertyNaming=original," +
-                                         "removeEnumValuePrefix=false," +
-                                         "useStringEnum=true" }
-                        };
+                    var requestData = JsonConvert.SerializeObject(requestBody);
 
-                        var requestData = JsonConvert.SerializeObject(requestBody);
+                    var requestBytes = Encoding.ASCII.GetBytes(requestData);
 
-                        var requestBytes = Encoding.ASCII.GetBytes(requestData);
+                    request.Method = WebRequestMethods.Http.Post;
+                    request.ContentLength = requestBytes.Length;
+                    request.ContentType = "application/json";
 
-                        request.Method = WebRequestMethods.Http.Post;
-                        request.ContentLength = requestBytes.Length;
-                        request.ContentType = "application/json";
+                    request.Headers.Add("Elements-SessionSecret", sessionToken);
 
-                        request.Headers.Add("Elements-SessionSecret", sessionToken);
-
-                        using (Stream dataStream = request.GetRequestStream())
-                        {
-                            dataStream.Write(requestBytes, 0, requestBytes.Length);
-                        }
-
-                        using var response = (HttpWebResponse)request.GetResponse();
-                        using var responseStream = response.GetResponseStream();
-                        const int BUFFER_SIZE = 16 * 1024;
-
-                        var buffer = new byte[BUFFER_SIZE];
-                        int bytesRead;
-
-                        do
-                        {
-                            bytesRead = responseStream.Read(buffer, 0, BUFFER_SIZE);
-                            fileStream.Write(buffer, 0, bytesRead);
-                        } while (bytesRead > 0);
-
-                        fileStream.Close();
+                    using (Stream dataStream = request.GetRequestStream())
+                    {
+                        dataStream.Write(requestBytes, 0, requestBytes.Length);
                     }
+
+                    using var response = (HttpWebResponse)request.GetResponse();
+                    using var responseStream = response.GetResponseStream();
+                    const int BUFFER_SIZE = 16 * 1024;
+
+                    var buffer = new byte[BUFFER_SIZE];
+                    int bytesRead;
+
+                    do
+                    {
+                        bytesRead = responseStream.Read(buffer, 0, BUFFER_SIZE);
+                        fileStream.Write(buffer, 0, bytesRead);
+                    } while (bytesRead > 0);
+
+                    fileStream.Close();
                 }
                 catch (Exception e)
                 {
@@ -242,8 +240,6 @@ namespace Elements.Codegen
 
                 if (configPath == null)
                 {
-                    string configPath;
-
                     //We'll try to place the config file in a folder named "Config"
                     //relative to the location of this script.
                     if (!string.IsNullOrEmpty(configGuid))

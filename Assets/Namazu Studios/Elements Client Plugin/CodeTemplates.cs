@@ -19,7 +19,8 @@ namespace {namespace}.Client
         /// </summary>
         public ElementsClient Owner { get; set; }
 
-        partial void InterceptRequest(UnityWebRequest req, string path, RequestOptions options, IReadableConfiguration configuration){}
+        // Uncomment and implement to add custom logic before every API request.
+        // partial void InterceptRequest(UnityWebRequest req, string path, RequestOptions options, IReadableConfiguration configuration) { }
 
         partial void InterceptResponse(UnityWebRequest req, string path, RequestOptions options, IReadableConfiguration configuration, ref object responseData)
         {
@@ -62,7 +63,7 @@ namespace {namespace}.Client
         
         // Registry of APIs and their configs
         private readonly Dictionary<Type, object> apis = new();
-        private readonly HashSet<IReadableConfiguration> configurations = new(); // actual type is your generated Element API
+        private readonly HashSet<IReadableConfiguration> configurations = new(); // actual type is in your generated Element API
 
         public const string AUTH_HEADER = ""Elements-SessionSecret"";
         public const string PROFILE_HEADER = ""Elements-ProfileId"";
@@ -143,11 +144,11 @@ namespace {namespace}.Client
         /// as defined by dev.getelements.elements.app.serve.prefix in your custom Element. You can also see
         /// this in the element info in the admin console.
         /// </summary>
-        public TApi CreateAppApi<TApi>(string appServePrefix) where TApi : class
+        public TApi CreateAppApi<TApi>(string appServePrefix) where TApi : class, IApiAccessor
         {
             var baseUrl = AppBaseUrl(appServePrefix);
-            dynamic api = (TApi)Activator.CreateInstance(typeof(TApi), baseUrl);
-            api.ExceptionFactory = null;
+            var api = (TApi)Activator.CreateInstance(typeof(TApi), baseUrl);
+            api.ExceptionFactory = null; // Set this after creation if you prefer to use it. The default from OpenAPI is buggy :(
             RegisterApi(api);
             return api;
         }
